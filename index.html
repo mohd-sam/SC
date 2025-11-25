@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Calendar</title>
+    <style>
+        :root {
+            --excel-green: #38761d;   /* The Dark Green */
+            --excel-yellow: #ffeb3b;  /* The Bright Yellow */
+            --header-gold: #ffd966;   /* The Header Orange/Yellow */
+            --header-grey: #e7e6e6;   /* Light Grey Headers */
+            --special-red: #ff0000;   /* Red Text */
+            --border-color: #a0a0a0;
+            --font-family: 'Calibri', 'Segoe UI', sans-serif;
+            --sidebar-bg: #f8f9fa;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: #fcfcfc;
+            margin: 0;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        /* LAYOUT CONTAINER */
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            max-width: 1400px; /* Increased for sidebar */
+            margin: 0 auto;
+        }
+
+        /* On mobile, stack them */
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-wrap: wrap;
+            }
+            .sidebar-section {
+                width: 100%;
+                order: 3; /* Move to bottom on mobile */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column; /* Stack vertically */
+            }
+            .controls-section { order: 1; }
+            .calendar-section { order: 2; }
+            .sidebar-section { order: 3; }
+        }
+
+        /* --- SECTIONS --- */
+        .calendar-section {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .controls-section {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        /* NEW SIDEBAR SECTION */
+        .sidebar-section {
+            flex: 1;
+            min-width: 250px;
+            background: var(--sidebar-bg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+
+        /* TABLES COMMON STYLES */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 4px 2px;
+            text-align: center;
+            height: 24px;
+        }
+
+        /* INPUT STYLES */
+        input {
+            width: 90%;
+            border: none;
+            text-align: center;
+            font-family: var(--font-family);
+            font-size: 14px;
+            background: rgba(255,255,255,0.5);
+        }
+        input:focus {
+            outline: 2px solid #217346;
+            background: white;
+        }
+        
+        /* Specific input tweaks */
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* --- SPECIFIC EXCEL STYLES --- */
+        
+        /* Headers */
+        .header-grey { background-color: var(--header-grey); font-weight: bold; }
+        .header-gold { background-color: var(--header-gold); font-weight: bold; }
+        .header-red { background-color: #ff6464; color: white; font-weight: bold; }
+        .index-green { background-color: var(--excel-green); color: white; font-weight: bold; }
+        .calc-cell { background-color: #f3f3f3; color: #333; }
+
+        /* Calendar Cells */
+        .cal-header {
+            background-color: var(--header-grey);
+            font-weight: bold;
+        }
+        
+        .cell-off {
+            background-color: var(--excel-green);
+            color: white;
+        }
+        
+        .cell-on {
+            background-color: var(--excel-yellow);
+            color: black;
+        }
+
+        /* SPECIAL DATE STYLE (Priority) */
+        .cell-special {
+            background-color: white !important;
+            color: red !important;
+            font-weight: bold !important;
+        }
+
+        /* UPDATED: First Day Style (Just Bold) */
+        .first-day-highlight {
+            font-weight: bold !important;
+            /* Removed border, size increase, font-family change */
+        }
+
+        .section-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            background-color: #ddd;
+            padding: 5px;
+            border: 1px solid #999;
+        }
+
+        .instructions-box {
+            background-color: #e8f5e9;
+            border: 1px solid #2e7d32;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #1b5e20;
+        }
+        .instructions-box strong {
+            color: #000;
+        }
+
+        /* --- SIDEBAR STYLES --- */
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+            border-bottom: 2px solid #217346;
+            padding-bottom: 5px;
+        }
+        .holiday-card {
+            background: white;
+            border-left: 4px solid #217346;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .holiday-name {
+            font-weight: bold;
+            color: #217346;
+            font-size: 14px;
+        }
+        .holiday-date {
+            font-size: 13px;
+            color: #555;
+            margin-top: 2px;
+        }
+        .hijri-year-label {
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .loading-text {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+            padding: 10px;
+        }
+
+        /* --- YEARLY VIEW STYLES --- */
+        .year-view-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+        .year-header-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .year-nav-btn {
+            background-color: #e7e6e6;
+            border: 1px solid #a0a0a0;
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .year-nav-btn:hover {
+            background-color: #d0d0d0;
+        }
+
+        .year-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .month-block {
+            width: 280px; /* Adjust for responsiveness */
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        .month-title {
+            text-align: center;
+            font-weight: bold;
+            background-color: var(--header-grey);
+            padding: 3px;
+            margin-bottom: 3px;
+        }
+        .mini-table {
+            width: 100%;
+            border: none;
+            font-size: 11px;
+        }
+        .mini-table th, .mini-table td {
+            height: 18px;
+            padding: 0;
+            border: 1px solid #eee;
+        }
+        .mini-day-header {
+            background-color: #f0f0f0;
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+
+    <!-- LEFT SIDE: CALENDAR GRID -->
+    <div class="calendar-section">
+        <div style="text-align:center; font-weight:bold; padding:5px; margin-bottom:5px;">Calendar View</div>
+        <table id="calTable">
+            <thead>
+                <tr id="calHeaderRow">
+                    <!-- JS fills headers -->
+                </tr>
+            </thead>
+            <tbody id="calBody">
+                <!-- JS fills dates -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- CENTER: CONTROLS & LOGIC -->
+    <div class="controls-section">
+        
+        <!-- INSTRUCTIONS -->
+        <div class="instructions-box">
+            <strong>How to use this page:</strong><br>
+            1. The <strong>First Working Day</strong> is set to Today automatically.<br>
+            2. Enter any <strong>Special Dates</strong> (like holidays) to highlight them in Red.<br>
+            3. In the list below, adjust <strong>"On Days"</strong> and <strong>"Off Days"</strong>.<br>
+            * Changing a value automatically updates all subsequent rows.<br>
+            * The calendar views (Left & Bottom) update instantly.
+        </div>
+
+        <!-- BLOCK 1: START DATE INPUT -->
+        <table>
+            <tr>
+                <td colspan="4" class="header-grey">First Working Day</td>
+            </tr>
+            <tr>
+                <td class="header-gold">Day</td>
+                <td class="header-gold">Month</td>
+                <td class="header-gold">Year</td>
+                <td class="header-gold">Weekday</td>
+            </tr>
+            <tr>
+                <!-- Values removed; populated by JS on load -->
+                <td><input type="number" id="inDay" onchange="calculateAll()"></td>
+                <td><input type="number" id="inMonth" onchange="calculateAll()"></td>
+                <td><input type="number" id="inYear" onchange="calculateAll()"></td>
+                <td class="calc-cell" id="outWeekday">...</td>
+            </tr>
+        </table>
+
+        <!-- BLOCK 2: SPECIAL DATES -->
+        <table>
+            <tr>
+                <td class="header-red">Special Date 1</td>
+                <td><input type="date" id="spec1" onchange="calculateAll()"></td>
+                <td class="header-red">Special Date 2</td>
+                <td><input type="date" id="spec2" onchange="calculateAll()"></td>
+            </tr>
+            <tr>
+                <td class="header-red">Special Date 3</td>
+                <td><input type="date" id="spec3" onchange="calculateAll()"></td>
+                <td colspan="2" style="background:#f0f0f0;"></td>
+            </tr>
+        </table>
+
+        <!-- BLOCK 3: SHIFT ROTATION TABLE -->
+        <table id="logicTable">
+            <thead>
+                <tr>
+                    <td class="index-green">#</td>
+                    <td class="header-gold">On Duty Start</td>
+                    <td class="header-gold">On Days</td>
+                    <td class="header-gold">Off Days</td>
+                    <td class="header-gold">End Date</td>
+                </tr>
+            </thead>
+            <tbody id="logicBody">
+                <!-- JS Generates this -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- RIGHT SIDE: ISLAMIC HOLIDAYS -->
+    <div class="sidebar-section">
+        <div class="sidebar-title">Islamic Holidays</div>
+        <div id="islamicHolidaysList">
+            <div class="loading-text">Loading upcoming dates...</div>
+        </div>
+        <div style="font-size:10px; color:#999; text-align:center; margin-top:10px;">
+            *Dates are calculated estimates via API and may vary by local moon sighting (+/- 1 day).
+        </div>
+    </div>
+
+</div>
+
+<!-- YEARLY VIEW SECTION -->
+<div class="year-view-container">
+    <div class="year-header-controls">
+        <button class="year-nav-btn" onclick="changeYear(-1)">&lt;</button>
+        <span id="yearDisplayLabel">Yearly Overview</span>
+        <button class="year-nav-btn" onclick="changeYear(1)">&gt;</button>
+    </div>
+    <div class="year-grid" id="yearGrid">
+        <!-- JS fills months here -->
+    </div>
+</div>
+
+<script>
+    // GLOBAL STATE
+    let rowsState = Array.from({length: 20}, () => ({ on: 14, off: 14 }));
+    let globalRotations = [];
+    let currentViewYear = 2025;
+
+    function init() {
+        // Set inputs to Today's Date
+        const today = new Date();
+        document.getElementById('inDay').value = today.getDate();
+        document.getElementById('inMonth').value = today.getMonth() + 1; 
+        document.getElementById('inYear').value = today.getFullYear();
+        
+        // Run Calculation
+        calculateAll();
+
+        // Fetch Holidays for current Hijri context
+        fetchIslamicHolidays(today.getFullYear());
+    }
+
+    // --- MAIN CALCULATION LOGIC ---
+    function calculateAll() {
+        // 1. Get Top Date Inputs
+        let d = parseInt(document.getElementById('inDay').value) || 1;
+        let m = parseInt(document.getElementById('inMonth').value) || 1;
+        let y = parseInt(document.getElementById('inYear').value) || 2025;
+        
+        let startDate = new Date(y, m - 1, d);
+
+        // Update Global Year View only on first load
+        if (!document.getElementById('yearGrid').hasChildNodes()) {
+            currentViewYear = y;
+        }
+
+        // Update Weekday Display
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        document.getElementById('outWeekday').innerText = days[startDate.getDay()];
+
+        // 2. Build Logic Table & Calculate Rotations
+        let logicBody = document.getElementById('logicBody');
+        logicBody.innerHTML = "";
+        globalRotations = [];
+
+        let currentStart = new Date(startDate);
+        
+        for (let i = 0; i < rowsState.length; i++) {
+            let rowData = rowsState[i];
+            
+            // Calculate Dates using current row's ON/OFF settings
+            let workEnd = new Date(currentStart);
+            workEnd.setDate(currentStart.getDate() + rowData.on - 1);
+
+            let cycleEnd = new Date(currentStart);
+            cycleEnd.setDate(currentStart.getDate() + rowData.on + rowData.off - 1);
+
+            globalRotations.push({
+                start: new Date(currentStart),
+                workEnd: new Date(workEnd)
+            });
+
+            let sStr = formatDate(currentStart);
+            let eStr = formatDate(cycleEnd);
+
+            let rowHTML = `
+                <tr>
+                    <td class="index-green">${i + 1}</td>
+                    <td>${sStr}</td>
+                    <td><input type="number" value="${rowData.on}" onchange="updateTable(${i}, 'on', this.value)"></td>
+                    <td><input type="number" value="${rowData.off}" onchange="updateTable(${i}, 'off', this.value)"></td>
+                    <td>${eStr}</td>
+                </tr>
+            `;
+            logicBody.innerHTML += rowHTML;
+
+            currentStart = new Date(cycleEnd);
+            currentStart.setDate(currentStart.getDate() + 1);
+        }
+
+        // 3. Build Main Calendar (Left)
+        buildCalendar(startDate);
+
+        // 4. Build Yearly View (Bottom)
+        updateYearView();
+    }
+
+    function updateTable(idx, type, val) {
+        let numVal = parseInt(val);
+        if (isNaN(numVal)) numVal = 0; 
+        
+        for (let i = idx; i < rowsState.length; i++) {
+            if (type === 'on') {
+                rowsState[i].on = numVal;
+            } else if (type === 'off') {
+                rowsState[i].off = numVal;
+            }
+        }
+        calculateAll();
+    }
+
+    function changeYear(delta) {
+        currentViewYear += delta;
+        updateYearView();
+    }
+
+    function updateYearView() {
+        document.getElementById('yearDisplayLabel').innerText = currentViewYear + " Yearly Overview";
+        let yearStart = new Date(currentViewYear, 0, 1);
+        buildYearView(yearStart);
+    }
+
+    // --- CALENDAR BUILDING ---
+    function buildCalendar(firstDate) {
+        let thead = document.getElementById('calHeaderRow');
+        let tbody = document.getElementById('calBody');
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+
+        let specials = getSpecialDates();
+        const daysShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        let startDayIdx = firstDate.getDay(); 
+
+        for (let i = 0; i < 7; i++) {
+            let dayName = daysShort[(startDayIdx + i) % 7];
+            thead.innerHTML += `<td class="cal-header">${dayName}</td>`;
+        }
+
+        let gridDate = new Date(firstDate);
+        
+        for (let r = 0; r < 60; r++) {
+            let tr = document.createElement('tr');
+            for (let c = 0; c < 7; c++) {
+                let cell = document.createElement('td');
+                let mShort = gridDate.toLocaleString('default', { month: 'short' });
+                let dayNum = gridDate.getDate();
+                cell.innerText = dayNum + "-" + mShort;
+
+                applyColorLogic(cell, gridDate, specials);
+
+                if (dayNum === 1) {
+                    cell.classList.add('first-day-highlight');
+                }
+                tr.appendChild(cell);
+                gridDate.setDate(gridDate.getDate() + 1);
+            }
+            tbody.appendChild(tr);
+        }
+    }
+
+    function buildYearView(yearStartDate) {
+        let container = document.getElementById('yearGrid');
+        container.innerHTML = "";
+        let specials = getSpecialDates();
+        
+        for (let m = 0; m < 12; m++) {
+            let currentMonth = new Date(yearStartDate.getFullYear(), m, 1);
+            let monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            let block = document.createElement('div');
+            block.className = "month-block";
+            
+            let title = document.createElement('div');
+            title.className = "month-title";
+            title.innerText = monthName;
+            block.appendChild(title);
+
+            let table = document.createElement('table');
+            table.className = "mini-table";
+            
+            let thead = document.createElement('tr');
+            ["S","M","T","W","T","F","S"].forEach(d => {
+                let th = document.createElement('th');
+                th.innerText = d;
+                th.className = "mini-day-header";
+                thead.appendChild(th);
+            });
+            table.appendChild(thead);
+
+            let startDay = currentMonth.getDay();
+            let daysInMonth = new Date(yearStartDate.getFullYear(), m + 1, 0).getDate();
+            
+            let row = document.createElement('tr');
+            for (let i=0; i<startDay; i++) {
+                let td = document.createElement('td');
+                td.style.backgroundColor = "white"; 
+                row.appendChild(td);
+            }
+
+            for (let d=1; d<=daysInMonth; d++) {
+                if (row.children.length === 7) {
+                    table.appendChild(row);
+                    row = document.createElement('tr');
+                }
+                
+                let cellDate = new Date(yearStartDate.getFullYear(), m, d);
+                let td = document.createElement('td');
+                td.innerText = d;
+                applyColorLogic(td, cellDate, specials);
+                row.appendChild(td);
+            }
+
+            while (row.children.length > 0 && row.children.length < 7) {
+                let td = document.createElement('td');
+                 td.style.backgroundColor = "white"; 
+                row.appendChild(td);
+            }
+            if (row.children.length > 0) table.appendChild(row);
+
+            block.appendChild(table);
+            container.appendChild(block);
+        }
+    }
+
+    // --- ISLAMIC HOLIDAYS API ---
+    async function fetchIslamicHolidays(year) {
+        const listContainer = document.getElementById('islamicHolidaysList');
+        // Fetch current and next year to ensure we cover enough future holidays
+        const yearsToFetch = [year, year + 1];
+        let holidays = [];
+
+        try {
+            for (let y of yearsToFetch) {
+                // Aladhan API: 01-09-YYYY is 1st Ramadan, 01-10 is Eid Fitr, 10-12 is Eid Adha
+                // We convert specific Hijri dates to Gregorian for the Hijri years overlapping this Gregorian year.
+                // Since this is complex, we will loop throughHijri years 1446, 1447, 1448
+                // Approx mapping: 2025 -> 1446/1447.
+                
+                // Let's fetch Gregorian dates for specific Hijri events
+                // 1 Ramadan = 01-09-HijriYear
+                // 1 Shawwal = 01-10-HijriYear (Eid Fitr)
+                // 10 Dhul Hijjah = 10-12-HijriYear (Eid Adha)
+                
+                // We'll calculate Hijri year approx: Year - 579.
+                let baseHijri = y - 579;
+                let hijriYears = [baseHijri, baseHijri + 1];
+
+                for (let hYear of hijriYears) {
+                    // Ramadan Start (1-9-YYYY)
+                    let ramadan = await fetchHijriToGregorian(1, 9, hYear, "Ramadan Starts");
+                    if(ramadan) holidays.push(ramadan);
+
+                    // Eid Fitr (1-10-YYYY)
+                    let fitr = await fetchHijriToGregorian(1, 10, hYear, "Eid Al-Fitr");
+                    if(fitr) holidays.push(fitr);
+
+                    // Eid Adha (10-12-YYYY)
+                    let adha = await fetchHijriToGregorian(10, 12, hYear, "Eid Al-Adha");
+                    if(adha) holidays.push(adha);
+                }
+            }
+
+            // Sort by date
+            holidays.sort((a, b) => a.rawDate - b.rawDate);
+            
+            // Filter out past holidays (keep only future or very recent)
+            const today = new Date();
+            today.setDate(today.getDate() - 7); // keep items from last week
+            holidays = holidays.filter(h => h.rawDate >= today);
+
+            // Remove duplicates
+            holidays = holidays.filter((h, index, self) =>
+                index === self.findIndex((t) => (
+                    t.dateStr === h.dateStr && t.name === h.name
+                ))
+            );
+
+            // Render
+            listContainer.innerHTML = "";
+            let currentHijriYearLabel = "";
+
+            // Take top 6
+            holidays.slice(0, 6).forEach(h => {
+                // Check if we need a year header
+                if (h.hYear !== currentHijriYearLabel) {
+                    currentHijriYearLabel = h.hYear;
+                    let label = document.createElement('div');
+                    label.className = 'hijri-year-label';
+                    label.innerText = `Hijri Year ${h.hYear}`;
+                    listContainer.appendChild(label);
+                }
+
+                let div = document.createElement('div');
+                div.className = 'holiday-card';
+                div.innerHTML = `
+                    <div class="holiday-name">${h.name}</div>
+                    <div class="holiday-date">${h.dateStr}</div>
+                `;
+                listContainer.appendChild(div);
+            });
+
+        } catch (error) {
+            console.error(error);
+            listContainer.innerHTML = '<div class="loading-text" style="color:red">Failed to load holidays.<br>Check internet connection.</div>';
+        }
+    }
+
+    async function fetchHijriToGregorian(day, month, year, name) {
+        // API Endpoint: http://api.aladhan.com/v1/hToG?date=DD-MM-YYYY
+        let dateStr = `${String(day).padStart(2,'0')}-${String(month).padStart(2,'0')}-${year}`;
+        let response = await fetch(`https://api.aladhan.com/v1/hToG?date=${dateStr}`);
+        let data = await response.json();
+        
+        if (data.code === 200) {
+            let g = data.data.gregorian;
+            let dateObj = new Date(g.year, g.month.number - 1, g.day);
+            return {
+                name: name,
+                dateStr: `${g.day} ${g.month.en} ${g.year}`,
+                rawDate: dateObj,
+                hYear: year
+            };
+        }
+        return null;
+    }
+
+    // --- UTILITIES ---
+    function applyColorLogic(cellElement, dateObj, specials) {
+        let isoDate = toISODate(dateObj);
+        let isSpecial = specials.includes(isoDate);
+        let isOnDuty = false;
+        let time = dateObj.getTime();
+
+        for(let rot of globalRotations) {
+            if (time >= rot.start.getTime() && time <= rot.workEnd.getTime()) {
+                isOnDuty = true;
+                break;
+            }
+        }
+
+        if (isSpecial) cellElement.className = "cell-special";
+        else if (isOnDuty) cellElement.className = "cell-on";
+        else cellElement.className = "cell-off";
+    }
+
+    function getSpecialDates() {
+        let s1 = document.getElementById('spec1').value; 
+        let s2 = document.getElementById('spec2').value;
+        let s3 = document.getElementById('spec3').value;
+        return [s1, s2, s3].filter(d => d); 
+    }
+
+    function formatDate(d) {
+        let day = String(d.getDate()).padStart(2, '0');
+        let month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${day}/${month}/${d.getFullYear()}`;
+    }
+
+    function toISODate(d) {
+        let day = String(d.getDate()).padStart(2, '0');
+        let month = String(d.getMonth() + 1).padStart(2, '0');
+        return `${d.getFullYear()}-${month}-${day}`;
+    }
+
+    window.onload = init;
+
+</script>
+
+</body>
+</html>
