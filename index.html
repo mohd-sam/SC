@@ -29,7 +29,7 @@
             display: flex;
             flex-direction: row;
             gap: 20px;
-            max-width: 1400px; /* Increased for sidebar */
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -40,13 +40,13 @@
             }
             .sidebar-section {
                 width: 100%;
-                order: 3; /* Move to bottom on mobile */
+                order: 3;
             }
         }
 
         @media (max-width: 768px) {
             .main-container {
-                flex-direction: column; /* Stack vertically */
+                flex-direction: column;
             }
             .controls-section { order: 1; }
             .calendar-section { order: 2; }
@@ -72,10 +72,9 @@
             border-radius: 4px;
         }
 
-        /* NEW SIDEBAR SECTION */
         .sidebar-section {
             flex: 1;
-            min-width: 250px;
+            min-width: 280px;
             background: var(--sidebar-bg);
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             padding: 15px;
@@ -111,6 +110,16 @@
             background: white;
         }
         
+        /* Special style for the Main Date Picker */
+        .large-date-input {
+            width: 98%;
+            height: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+        }
+
         /* Specific input tweaks */
         input[type="number"] {
             -moz-appearance: textfield;
@@ -122,15 +131,12 @@
         }
 
         /* --- SPECIFIC EXCEL STYLES --- */
-        
-        /* Headers */
         .header-grey { background-color: var(--header-grey); font-weight: bold; }
         .header-gold { background-color: var(--header-gold); font-weight: bold; }
         .header-red { background-color: #ff6464; color: white; font-weight: bold; }
         .index-green { background-color: var(--excel-green); color: white; font-weight: bold; }
         .calc-cell { background-color: #f3f3f3; color: #333; }
 
-        /* Calendar Cells */
         .cal-header {
             background-color: var(--header-grey);
             font-weight: bold;
@@ -153,19 +159,9 @@
             font-weight: bold !important;
         }
 
-        /* UPDATED: First Day Style (Just Bold) */
+        /* First Day Style */
         .first-day-highlight {
             font-weight: bold !important;
-            /* Removed border, size increase, font-family change */
-        }
-
-        .section-title {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 5px;
-            background-color: #ddd;
-            padding: 5px;
-            border: 1px solid #999;
         }
 
         .instructions-box {
@@ -198,6 +194,12 @@
             padding: 10px;
             margin-bottom: 10px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .holiday-info {
+            flex: 1;
         }
         .holiday-name {
             font-weight: bold;
@@ -209,6 +211,24 @@
             color: #555;
             margin-top: 2px;
         }
+        .set-btn {
+            background-color: #217346;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .set-btn:hover {
+            background-color: #1b5e20;
+        }
+        .set-btn:active {
+            transform: scale(0.95);
+        }
+        
         .hijri-year-label {
             font-size: 12px;
             color: #888;
@@ -262,7 +282,7 @@
             justify-content: center;
         }
         .month-block {
-            width: 280px; /* Adjust for responsiveness */
+            width: 280px;
             border: 1px solid #ccc;
             padding: 5px;
         }
@@ -314,30 +334,27 @@
         
         <!-- INSTRUCTIONS -->
         <div class="instructions-box">
-            <strong>How to use this page:</strong><br>
-            1. The <strong>First Working Day</strong> is set to Today automatically.<br>
-            2. Enter any <strong>Special Dates</strong> (like holidays) to highlight them in Red.<br>
-            3. In the list below, adjust <strong>"On Days"</strong> and <strong>"Off Days"</strong>.<br>
-            * Changing a value automatically updates all subsequent rows.<br>
-            * The calendar views (Left & Bottom) update instantly.
+            <strong>How to use:</strong><br>
+            1. Select the <strong>First Working Day</strong> (defaults to Today).<br>
+            2. Set <strong>Special Dates</strong> manually or click "Set" on the Islamic Holidays list.<br>
+            3. Adjust <strong>"On Days"</strong> and <strong>"Off Days"</strong> in the table below.<br>
+            * All views (Calendar, Year View) update instantly.
         </div>
 
-        <!-- BLOCK 1: START DATE INPUT -->
+        <!-- BLOCK 1: START DATE INPUT (Merged Cell) -->
         <table>
             <tr>
                 <td colspan="4" class="header-grey">First Working Day</td>
             </tr>
             <tr>
-                <td class="header-gold">Day</td>
-                <td class="header-gold">Month</td>
-                <td class="header-gold">Year</td>
-                <td class="header-gold">Weekday</td>
+                <td colspan="3" class="header-gold">Date Selection</td>
+                <td class="header-gold" style="width:25%">Weekday</td>
             </tr>
             <tr>
-                <!-- Values removed; populated by JS on load -->
-                <td><input type="number" id="inDay" onchange="calculateAll()"></td>
-                <td><input type="number" id="inMonth" onchange="calculateAll()"></td>
-                <td><input type="number" id="inYear" onchange="calculateAll()"></td>
+                <!-- Merged Input Cell -->
+                <td colspan="3" style="padding:0;">
+                    <input type="date" id="inStartDate" class="large-date-input" onchange="calculateAll()">
+                </td>
                 <td class="calc-cell" id="outWeekday">...</td>
             </tr>
         </table>
@@ -353,7 +370,9 @@
             <tr>
                 <td class="header-red">Special Date 3</td>
                 <td><input type="date" id="spec3" onchange="calculateAll()"></td>
-                <td colspan="2" style="background:#f0f0f0;"></td>
+                <td colspan="2" style="background:#f0f0f0; font-size:11px; color:#666;">
+                    (Use buttons in sidebar to auto-fill)
+                </td>
             </tr>
         </table>
 
@@ -381,7 +400,7 @@
             <div class="loading-text">Loading upcoming dates...</div>
         </div>
         <div style="font-size:10px; color:#999; text-align:center; margin-top:10px;">
-            *Dates are calculated estimates via API and may vary by local moon sighting (+/- 1 day).
+            *Dates are estimated (Aladhan API) and may vary by moon sighting.
         </div>
     </div>
 
@@ -404,28 +423,37 @@
     let rowsState = Array.from({length: 20}, () => ({ on: 14, off: 14 }));
     let globalRotations = [];
     let currentViewYear = 2025;
+    
+    // Tracks which special date slot (1, 2, or 3) to fill next
+    let nextSpecialSlot = 1; 
 
     function init() {
-        // Set inputs to Today's Date
+        // Set unified input to Today's Date
         const today = new Date();
-        document.getElementById('inDay').value = today.getDate();
-        document.getElementById('inMonth').value = today.getMonth() + 1; 
-        document.getElementById('inYear').value = today.getFullYear();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        
+        document.getElementById('inStartDate').value = `${yyyy}-${mm}-${dd}`;
         
         // Run Calculation
         calculateAll();
 
-        // Fetch Holidays for current Hijri context
-        fetchIslamicHolidays(today.getFullYear());
+        // Fetch Holidays
+        fetchIslamicHolidays(yyyy);
     }
 
     // --- MAIN CALCULATION LOGIC ---
     function calculateAll() {
-        // 1. Get Top Date Inputs
-        let d = parseInt(document.getElementById('inDay').value) || 1;
-        let m = parseInt(document.getElementById('inMonth').value) || 1;
-        let y = parseInt(document.getElementById('inYear').value) || 2025;
-        
+        // 1. Get Date from Main Picker
+        let dateVal = document.getElementById('inStartDate').value;
+        if (!dateVal) return; // Wait for input
+
+        // Parse YYYY-MM-DD to avoid timezone issues (force local midnight)
+        let parts = dateVal.split('-');
+        let y = parseInt(parts[0]);
+        let m = parseInt(parts[1]);
+        let d = parseInt(parts[2]);
         let startDate = new Date(y, m - 1, d);
 
         // Update Global Year View only on first load
@@ -614,63 +642,42 @@
     // --- ISLAMIC HOLIDAYS API ---
     async function fetchIslamicHolidays(year) {
         const listContainer = document.getElementById('islamicHolidaysList');
-        // Fetch current and next year to ensure we cover enough future holidays
         const yearsToFetch = [year, year + 1];
         let holidays = [];
 
         try {
             for (let y of yearsToFetch) {
-                // Aladhan API: 01-09-YYYY is 1st Ramadan, 01-10 is Eid Fitr, 10-12 is Eid Adha
-                // We convert specific Hijri dates to Gregorian for the Hijri years overlapping this Gregorian year.
-                // Since this is complex, we will loop throughHijri years 1446, 1447, 1448
-                // Approx mapping: 2025 -> 1446/1447.
-                
-                // Let's fetch Gregorian dates for specific Hijri events
-                // 1 Ramadan = 01-09-HijriYear
-                // 1 Shawwal = 01-10-HijriYear (Eid Fitr)
-                // 10 Dhul Hijjah = 10-12-HijriYear (Eid Adha)
-                
-                // We'll calculate Hijri year approx: Year - 579.
                 let baseHijri = y - 579;
                 let hijriYears = [baseHijri, baseHijri + 1];
 
                 for (let hYear of hijriYears) {
-                    // Ramadan Start (1-9-YYYY)
                     let ramadan = await fetchHijriToGregorian(1, 9, hYear, "Ramadan Starts");
                     if(ramadan) holidays.push(ramadan);
 
-                    // Eid Fitr (1-10-YYYY)
                     let fitr = await fetchHijriToGregorian(1, 10, hYear, "Eid Al-Fitr");
                     if(fitr) holidays.push(fitr);
 
-                    // Eid Adha (10-12-YYYY)
                     let adha = await fetchHijriToGregorian(10, 12, hYear, "Eid Al-Adha");
                     if(adha) holidays.push(adha);
                 }
             }
 
-            // Sort by date
             holidays.sort((a, b) => a.rawDate - b.rawDate);
             
-            // Filter out past holidays (keep only future or very recent)
             const today = new Date();
-            today.setDate(today.getDate() - 7); // keep items from last week
+            today.setDate(today.getDate() - 7); 
             holidays = holidays.filter(h => h.rawDate >= today);
 
-            // Remove duplicates
             holidays = holidays.filter((h, index, self) =>
                 index === self.findIndex((t) => (
                     t.dateStr === h.dateStr && t.name === h.name
                 ))
             );
 
-            // Render
             listContainer.innerHTML = "";
             let currentHijriYearLabel = "";
 
-            // Take top 6
             holidays.slice(0, 6).forEach(h => {
-                // Check if we need a year header
                 if (h.hYear !== currentHijriYearLabel) {
                     currentHijriYearLabel = h.hYear;
                     let label = document.createElement('div');
@@ -681,21 +688,30 @@
 
                 let div = document.createElement('div');
                 div.className = 'holiday-card';
+                
+                // Format date YYYY-MM-DD for value passing
+                let yyyy = h.rawDate.getFullYear();
+                let mm = String(h.rawDate.getMonth() + 1).padStart(2, '0');
+                let dd = String(h.rawDate.getDate()).padStart(2, '0');
+                let dateVal = `${yyyy}-${mm}-${dd}`;
+
                 div.innerHTML = `
-                    <div class="holiday-name">${h.name}</div>
-                    <div class="holiday-date">${h.dateStr}</div>
+                    <div class="holiday-info">
+                        <div class="holiday-name">${h.name}</div>
+                        <div class="holiday-date">${h.dateStr}</div>
+                    </div>
+                    <button class="set-btn" onclick="assignSpecialDate('${dateVal}')">Set</button>
                 `;
                 listContainer.appendChild(div);
             });
 
         } catch (error) {
             console.error(error);
-            listContainer.innerHTML = '<div class="loading-text" style="color:red">Failed to load holidays.<br>Check internet connection.</div>';
+            listContainer.innerHTML = '<div class="loading-text" style="color:red">Failed to load holidays.</div>';
         }
     }
 
     async function fetchHijriToGregorian(day, month, year, name) {
-        // API Endpoint: http://api.aladhan.com/v1/hToG?date=DD-MM-YYYY
         let dateStr = `${String(day).padStart(2,'0')}-${String(month).padStart(2,'0')}-${year}`;
         let response = await fetch(`https://api.aladhan.com/v1/hToG?date=${dateStr}`);
         let data = await response.json();
@@ -711,6 +727,22 @@
             };
         }
         return null;
+    }
+
+    // --- ASSIGN SPECIAL DATE ---
+    function assignSpecialDate(dateString) {
+        // Logic: Fill slot 1 -> 2 -> 3 -> 1 (cycle)
+        // Uses global 'nextSpecialSlot'
+        
+        let targetId = `spec${nextSpecialSlot}`;
+        document.getElementById(targetId).value = dateString;
+        
+        // Advance slot
+        nextSpecialSlot++;
+        if (nextSpecialSlot > 3) nextSpecialSlot = 1;
+        
+        // Refresh
+        calculateAll();
     }
 
     // --- UTILITIES ---
