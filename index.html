@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shift Calendar</title>
+    <!-- PDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         :root {
             --excel-green: #38761d;   /* The Dark Green */
@@ -120,7 +123,7 @@
             cursor: pointer;
         }
 
-        /* Specific input tweaks */
+        /* Specific input tweaks for iOS/Android NumPad */
         input[type="number"] {
             -moz-appearance: textfield;
         }
@@ -225,9 +228,6 @@
         .set-btn:hover {
             background-color: #1b5e20;
         }
-        .set-btn:active {
-            transform: scale(0.95);
-        }
         
         .hijri-year-label {
             font-size: 12px;
@@ -308,164 +308,173 @@
             font-weight: bold;
         }
 
+        /* Export Button Style */
+        .export-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .export-btn:hover {
+            background-color: #c9302c;
+        }
+
     </style>
 </head>
 <body>
 
-<div class="main-container">
+    <div class="main-container">
 
-    <!-- LEFT SIDE: CALENDAR GRID -->
-    <div class="calendar-section">
-        <div style="text-align:center; font-weight:bold; padding:5px; margin-bottom:5px;">Calendar View</div>
-        <table id="calTable">
-            <thead>
-                <tr id="calHeaderRow">
-                    <!-- JS fills headers -->
-                </tr>
-            </thead>
-            <tbody id="calBody">
-                <!-- JS fills dates -->
-            </tbody>
-        </table>
-    </div>
-
-    <!-- CENTER: CONTROLS & LOGIC -->
-    <div class="controls-section">
-        
-        <!-- INSTRUCTIONS -->
-        <div class="instructions-box">
-            <strong>How to use:</strong><br>
-            1. Select the <strong>First Working Day</strong> (defaults to Today).<br>
-            2. Set <strong>Special Dates</strong> manually or click "Set" on the Islamic Holidays list.<br>
-            3. Adjust <strong>"On Days"</strong> and <strong>"Off Days"</strong> in the table below.<br>
-            * All views (Calendar, Year View) update instantly.
+        <!-- LEFT SIDE: CALENDAR GRID -->
+        <div class="calendar-section" id="section-calendar">
+            <div style="text-align:center; font-weight:bold; padding:5px; margin-bottom:5px;">Calendar View</div>
+            <table id="calTable">
+                <thead>
+                    <tr id="calHeaderRow">
+                        <!-- JS fills headers -->
+                    </tr>
+                </thead>
+                <tbody id="calBody">
+                    <!-- JS fills dates -->
+                </tbody>
+            </table>
         </div>
 
-        <!-- BLOCK 1: START DATE INPUT (Merged Cell) -->
-        <table>
-            <tr>
-                <td colspan="4" class="header-grey">First Working Day</td>
-            </tr>
-            <tr>
-                <td colspan="3" class="header-gold">Date Selection</td>
-                <td class="header-gold" style="width:25%">Weekday</td>
-            </tr>
-            <tr>
-                <!-- Merged Input Cell -->
-                <td colspan="3" style="padding:0;">
-                    <input type="date" id="inStartDate" class="large-date-input" onchange="calculateAll()">
-                </td>
-                <td class="calc-cell" id="outWeekday">...</td>
-            </tr>
-        </table>
+        <!-- CENTER: CONTROLS & LOGIC -->
+        <div class="controls-section">
+            
+            <!-- EXPORT BUTTON -->
+            <button class="export-btn" onclick="generateCustomPDF()">Export to PDF</button>
 
-        <!-- BLOCK 2: SPECIAL DATES -->
-        <table>
-            <tr>
-                <td class="header-red">Special Date 1</td>
-                <td><input type="date" id="spec1" onchange="calculateAll()"></td>
-                <td class="header-red">Special Date 2</td>
-                <td><input type="date" id="spec2" onchange="calculateAll()"></td>
-            </tr>
-            <tr>
-                <td class="header-red">Special Date 3</td>
-                <td><input type="date" id="spec3" onchange="calculateAll()"></td>
-                <td colspan="2" style="background:#f0f0f0; font-size:11px; color:#666;">
-                    (Use buttons in sidebar to auto-fill)
-                </td>
-            </tr>
-        </table>
+            <!-- INSTRUCTIONS -->
+            <div class="instructions-box">
+                <strong>How to use:</strong><br>
+                1. Select the <strong>First Working Day</strong> (defaults to Today).<br>
+                2. Set <strong>Special Dates</strong> manually or click "Set" on the Islamic Holidays list.<br>
+                3. Adjust <strong>"On Days"</strong> and <strong>"Off Days"</strong> in the table below.<br>
+            </div>
 
-        <!-- BLOCK 3: SHIFT ROTATION TABLE -->
-        <table id="logicTable">
-            <thead>
+            <!-- BLOCK 1: START DATE INPUT (Merged Cell) -->
+            <table>
                 <tr>
-                    <td class="index-green">#</td>
-                    <td class="header-gold">On Duty Start</td>
-                    <td class="header-gold">On Days</td>
-                    <td class="header-gold">Off Days</td>
-                    <td class="header-gold">End Date</td>
+                    <td colspan="4" class="header-grey">First Working Day</td>
                 </tr>
-            </thead>
-            <tbody id="logicBody">
-                <!-- JS Generates this -->
-            </tbody>
-        </table>
-    </div>
+                <tr>
+                    <td colspan="3" class="header-gold">Date Selection</td>
+                    <td class="header-gold" style="width:25%">Weekday</td>
+                </tr>
+                <tr>
+                    <!-- Merged Input Cell -->
+                    <td colspan="3" style="padding:0;">
+                        <input type="date" id="inStartDate" class="large-date-input" onchange="calculateAll()">
+                    </td>
+                    <td class="calc-cell" id="outWeekday">...</td>
+                </tr>
+            </table>
 
-    <!-- RIGHT SIDE: ISLAMIC HOLIDAYS -->
-    <div class="sidebar-section">
-        <div class="sidebar-title">Islamic Holidays</div>
-        <div id="islamicHolidaysList">
-            <div class="loading-text">Loading upcoming dates...</div>
+            <!-- BLOCK 2: SPECIAL DATES -->
+            <table>
+                <tr>
+                    <td class="header-red">Special Date 1</td>
+                    <td><input type="date" id="spec1" onchange="calculateAll()"></td>
+                    <td class="header-red">Special Date 2</td>
+                    <td><input type="date" id="spec2" onchange="calculateAll()"></td>
+                </tr>
+                <tr>
+                    <td class="header-red">Special Date 3</td>
+                    <td><input type="date" id="spec3" onchange="calculateAll()"></td>
+                    <td colspan="2" style="background:#f0f0f0; font-size:11px; color:#666;">
+                        (Use sidebar to auto-fill)
+                    </td>
+                </tr>
+            </table>
+
+            <!-- BLOCK 3: SHIFT ROTATION TABLE -->
+            <table id="logicTable">
+                <thead>
+                    <tr>
+                        <td class="index-green">#</td>
+                        <td class="header-gold">On Duty Start</td>
+                        <td class="header-gold">On Days</td>
+                        <td class="header-gold">Off Days</td>
+                        <td class="header-gold">End Date</td>
+                    </tr>
+                </thead>
+                <tbody id="logicBody">
+                    <!-- JS Generates this -->
+                </tbody>
+            </table>
         </div>
-        <div style="font-size:10px; color:#999; text-align:center; margin-top:10px;">
-            *Dates are estimated (Aladhan API) and may vary by moon sighting.
+
+        <!-- RIGHT SIDE: ISLAMIC HOLIDAYS -->
+        <div class="sidebar-section" id="section-holidays">
+            <div class="sidebar-title">Islamic Holidays</div>
+            <div id="islamicHolidaysList">
+                <div class="loading-text">Loading upcoming dates...</div>
+            </div>
+            <div id="holiday-footer" style="font-size:10px; color:#999; text-align:center; margin-top:10px;">
+                *Dates are estimated (Aladhan API) and may vary by moon sighting.
+            </div>
+        </div>
+
+    </div>
+
+    <!-- YEARLY VIEW SECTION -->
+    <div class="year-view-container" id="section-yearview">
+        <div class="year-header-controls">
+            <button class="year-nav-btn" onclick="changeYear(-1)">&lt;</button>
+            <span id="yearDisplayLabel">Yearly Overview</span>
+            <button class="year-nav-btn" onclick="changeYear(1)">&gt;</button>
+        </div>
+        <div class="year-grid" id="yearGrid">
+            <!-- JS fills months here -->
         </div>
     </div>
-
-</div>
-
-<!-- YEARLY VIEW SECTION -->
-<div class="year-view-container">
-    <div class="year-header-controls">
-        <button class="year-nav-btn" onclick="changeYear(-1)">&lt;</button>
-        <span id="yearDisplayLabel">Yearly Overview</span>
-        <button class="year-nav-btn" onclick="changeYear(1)">&gt;</button>
-    </div>
-    <div class="year-grid" id="yearGrid">
-        <!-- JS fills months here -->
-    </div>
-</div>
 
 <script>
     // GLOBAL STATE
     let rowsState = Array.from({length: 20}, () => ({ on: 14, off: 14 }));
     let globalRotations = [];
     let currentViewYear = 2025;
-    
-    // Tracks which special date slot (1, 2, or 3) to fill next
     let nextSpecialSlot = 1; 
 
     function init() {
-        // Set unified input to Today's Date
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         
         document.getElementById('inStartDate').value = `${yyyy}-${mm}-${dd}`;
-        
-        // Run Calculation
         calculateAll();
-
-        // Fetch Holidays
         fetchIslamicHolidays(yyyy);
     }
 
     // --- MAIN CALCULATION LOGIC ---
     function calculateAll() {
-        // 1. Get Date from Main Picker
         let dateVal = document.getElementById('inStartDate').value;
-        if (!dateVal) return; // Wait for input
+        if (!dateVal) return; 
 
-        // Parse YYYY-MM-DD to avoid timezone issues (force local midnight)
         let parts = dateVal.split('-');
         let y = parseInt(parts[0]);
         let m = parseInt(parts[1]);
         let d = parseInt(parts[2]);
         let startDate = new Date(y, m - 1, d);
 
-        // Update Global Year View only on first load
         if (!document.getElementById('yearGrid').hasChildNodes()) {
             currentViewYear = y;
         }
 
-        // Update Weekday Display
         const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         document.getElementById('outWeekday').innerText = days[startDate.getDay()];
 
-        // 2. Build Logic Table & Calculate Rotations
         let logicBody = document.getElementById('logicBody');
         logicBody.innerHTML = "";
         globalRotations = [];
@@ -475,7 +484,6 @@
         for (let i = 0; i < rowsState.length; i++) {
             let rowData = rowsState[i];
             
-            // Calculate Dates using current row's ON/OFF settings
             let workEnd = new Date(currentStart);
             workEnd.setDate(currentStart.getDate() + rowData.on - 1);
 
@@ -490,12 +498,13 @@
             let sStr = formatDate(currentStart);
             let eStr = formatDate(cycleEnd);
 
+            // Added inputmode="numeric" and onfocus="this.select()"
             let rowHTML = `
                 <tr>
                     <td class="index-green">${i + 1}</td>
                     <td>${sStr}</td>
-                    <td><input type="number" value="${rowData.on}" onchange="updateTable(${i}, 'on', this.value)"></td>
-                    <td><input type="number" value="${rowData.off}" onchange="updateTable(${i}, 'off', this.value)"></td>
+                    <td><input type="number" inputmode="numeric" value="${rowData.on}" onfocus="this.select()" onchange="updateTable(${i}, 'on', this.value)"></td>
+                    <td><input type="number" inputmode="numeric" value="${rowData.off}" onfocus="this.select()" onchange="updateTable(${i}, 'off', this.value)"></td>
                     <td>${eStr}</td>
                 </tr>
             `;
@@ -505,10 +514,7 @@
             currentStart.setDate(currentStart.getDate() + 1);
         }
 
-        // 3. Build Main Calendar (Left)
         buildCalendar(startDate);
-
-        // 4. Build Yearly View (Bottom)
         updateYearView();
     }
 
@@ -689,7 +695,6 @@
                 let div = document.createElement('div');
                 div.className = 'holiday-card';
                 
-                // Format date YYYY-MM-DD for value passing
                 let yyyy = h.rawDate.getFullYear();
                 let mm = String(h.rawDate.getMonth() + 1).padStart(2, '0');
                 let dd = String(h.rawDate.getDate()).padStart(2, '0');
@@ -731,18 +736,99 @@
 
     // --- ASSIGN SPECIAL DATE ---
     function assignSpecialDate(dateString) {
-        // Logic: Fill slot 1 -> 2 -> 3 -> 1 (cycle)
-        // Uses global 'nextSpecialSlot'
-        
         let targetId = `spec${nextSpecialSlot}`;
         document.getElementById(targetId).value = dateString;
         
-        // Advance slot
         nextSpecialSlot++;
         if (nextSpecialSlot > 3) nextSpecialSlot = 1;
         
-        // Refresh
         calculateAll();
+    }
+
+    // --- UPDATED PDF GENERATION (3x4 GRID FOR YEAR) ---
+    function generateCustomPDF() {
+        // 1. Create temporary container (A4 printable width)
+        let tempContainer = document.createElement('div');
+        tempContainer.style.width = '750px'; 
+        tempContainer.style.margin = '0 auto';
+        tempContainer.style.background = 'white';
+        tempContainer.style.padding = '10px';
+        tempContainer.style.boxSizing = 'border-box';
+        tempContainer.style.fontFamily = 'Calibri, sans-serif'; // enforce font
+
+        // 2. Clone Calendar (SECTION 1)
+        let calClone = document.getElementById('section-calendar').cloneNode(true);
+        calClone.style.flex = 'none';
+        calClone.style.width = '100%';
+        calClone.style.boxShadow = 'none';
+        calClone.style.marginBottom = '20px';
+        calClone.style.fontSize = '12px'; 
+        tempContainer.appendChild(calClone);
+
+        // 3. Clone Year View (SECTION 2 - MODIFIED FOR GRID)
+        let yearClone = document.getElementById('section-yearview').cloneNode(true);
+        yearClone.style.boxShadow = 'none';
+        yearClone.style.margin = '0 0 20px 0';
+        yearClone.style.width = '100%';
+
+        // Remove Nav Buttons
+        let navs = yearClone.querySelectorAll('.year-nav-btn');
+        navs.forEach(btn => btn.remove());
+
+        // Apply 3-column Grid to the container
+        let grid = yearClone.querySelector('.year-grid');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(3, 1fr)'; // 3 columns
+        grid.style.gap = '10px';
+        
+        // Adjust individual month blocks for PDF
+        let monthBlocks = yearClone.querySelectorAll('.month-block');
+        monthBlocks.forEach(block => {
+            block.style.width = 'auto'; // let grid handle width
+            block.style.fontSize = '10px'; // smaller font for dense view
+        });
+
+        tempContainer.appendChild(yearClone);
+
+        // 4. Clone Islamic Holidays (SECTION 3)
+        let sideClone = document.getElementById('section-holidays').cloneNode(true);
+        sideClone.style.flex = 'none';
+        sideClone.style.width = '100%';
+        sideClone.style.boxShadow = 'none';
+        sideClone.style.border = 'none';
+        
+        // Remove Set buttons
+        let setBtns = sideClone.querySelectorAll('.set-btn');
+        setBtns.forEach(btn => btn.remove());
+        
+        let footer = sideClone.querySelector('#holiday-footer');
+        if(footer) footer.remove();
+        
+        tempContainer.appendChild(sideClone);
+
+        // 5. Append hidden overlay
+        let overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.zIndex = '-9999';
+        overlay.style.opacity = '0'; 
+        overlay.appendChild(tempContainer);
+        document.body.appendChild(overlay);
+
+        // 6. Generate
+        const opt = {
+            margin:       [0.2, 0.2, 0.2, 0.2],
+            filename:     'Shift_Calendar.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true }, 
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf().set(opt).from(tempContainer).save().then(() => {
+            document.body.removeChild(overlay);
+        });
     }
 
     // --- UTILITIES ---
